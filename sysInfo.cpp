@@ -118,8 +118,8 @@ char readBuffer[100];
 
 void printIp()
 {
-  pFile = popen("hostname -I","r");
-
+  pFile = popen("/sbin/ifconfig | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'","r");
+  
   if (pFile == NULL) perror("Error getting hostname");
   else {
     while (fgets(readBuffer, 100, pFile) != NULL)
@@ -131,12 +131,18 @@ void printIp()
 
 void printInterfaces()
 {
-  pFile = popen("ls /sys/class/net","r");
-
+  pFile = popen("/sbin/ifconfig | grep 'Link encap:' | cut -f2 | awk '{ print $1}'","r");
+  
   if (pFile == NULL) perror("Error getting hostname");
   else {
     while (fgets(readBuffer, 100, pFile) != NULL)
-      display.print(readBuffer);
+      {
+	char *pch;
+	pch = strchr(readBuffer,'\n');
+	*pch = ' ';
+	display.print(readBuffer);
+      }
+    display.print("\n");
     pclose(pFile);
   }
   //display.display();
@@ -144,7 +150,7 @@ void printInterfaces()
 
 void printUname()
 {
-  pFile = popen("uname -srm","r");
+  pFile = popen("uname -sr","r");
 
   if (pFile == NULL) perror("Error getting uname");
   else {
