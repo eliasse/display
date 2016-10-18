@@ -10,7 +10,7 @@ echo "i2c-dev" >> /etc/modules
 git clone https://github.com/hallard/ArduiPi_SSD1306.git
 
 echo "Installing display libraries..."
-cd ArduiPi_OLED
+cd ArduiPi_SSD1306
 sudo make
 cd ..
 
