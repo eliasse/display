@@ -24,18 +24,18 @@ All text above, and the splash screen must be included in any redistribution
 						
 *********************************************************************/
 
-#include "ArduiPi_SSD1306.h"
+#include "ArduiPi_OLED_lib.h"
 #include "Adafruit_GFX.h"
-#include "Adafruit_SSD1306.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "ArduiPi_OLED.h"
+
 #include <getopt.h>
 
-#define PRG_NAME        "ssd1306_demo"
+#define PRG_NAME        "oled_demo"
 #define PRG_VERSION     "1.1"
 
 // Instantiate the display
-Adafruit_SSD1306 display;
+ArduiPi_OLED display;
+
 
 // Config Option
 struct s_opts
@@ -44,6 +44,8 @@ struct s_opts
 	int verbose;
 } ;
 
+int sleep_divisor = 1 ;
+	
 // default options values
 s_opts opts = {
 	OLED_ADAFRUIT_SPI_128x32,	// Default oled
@@ -58,22 +60,23 @@ s_opts opts = {
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
 static unsigned char logo16_glcd_bmp[] =
-  { 0b00000001, 0b10000000,
-    0b00000111, 0b11100000,
-    0b00001111, 0b11110000,
-    0b00011111, 0b11111000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b00001111, 0b11110000,
-    0b01111111, 0b01111000,
-    0b11111110, 0b11111110,
-    0b11111110, 0b11111110,
-    0b00111111, 0b01111100,
-    0b00001100, 0b00110000 };
+{ 0b00000000, 0b11000000,
+  0b00000001, 0b11000000,
+  0b00000001, 0b11000000,
+  0b00000011, 0b11100000,
+  0b11110011, 0b11100000,
+  0b11111110, 0b11111000,
+  0b01111110, 0b11111111,
+  0b00110011, 0b10011111,
+  0b00011111, 0b11111100,
+  0b00001101, 0b01110000,
+  0b00011011, 0b10100000,
+  0b00111111, 0b11100000,
+  0b00111111, 0b11110000,
+  0b01111100, 0b11110000,
+  0b01110000, 0b01110000,
+  0b00000000, 0b00110000 };
+
 
 void testdrawbitmap(const uint8_t *bitmap, uint8_t w, uint8_t h) {
   uint8_t icons[NUMFLAKES][3];
@@ -96,7 +99,7 @@ void testdrawbitmap(const uint8_t *bitmap, uint8_t w, uint8_t h) {
       display.drawBitmap(icons[f][XPOS], icons[f][YPOS], logo16_glcd_bmp, w, h, WHITE);
     }
     display.display();
-    usleep(100000);
+    usleep(100000/sleep_divisor);
     
     // then erase it + move it
     for (uint8_t f=0; f< NUMFLAKES; f++) {
@@ -113,65 +116,6 @@ void testdrawbitmap(const uint8_t *bitmap, uint8_t w, uint8_t h) {
    }
 }
 
-FILE *pFile;
-char readBuffer[100];
-
-void printIp()
-{
-  pFile = popen("/sbin/ifconfig | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'","r");
-  
-  if (pFile == NULL) perror("Error getting hostname");
-  else {
-    while (fgets(readBuffer, 100, pFile) != NULL)
-      display.print(readBuffer);
-    pclose(pFile);
-  }
-  //display.display();
-}
-
-void printInterfaces()
-{
-  pFile = popen("/sbin/ifconfig | grep 'Link encap:' | cut -f2 | awk '{ print $1}'","r");
-  
-  if (pFile == NULL) perror("Error getting hostname");
-  else {
-    while (fgets(readBuffer, 100, pFile) != NULL)
-      {
-	char *pch;
-	pch = strchr(readBuffer,'\n');
-	*pch = ' ';
-	display.print(readBuffer);
-      }
-    display.print("\n");
-    pclose(pFile);
-  }
-  //display.display();
-}
-
-void printUname()
-{
-  pFile = popen("uname -sr","r");
-
-  if (pFile == NULL) perror("Error getting uname");
-  else {
-    while (fgets(readBuffer, 100, pFile) != NULL)
-      display.print(readBuffer);
-    pclose(pFile);
-  }
-  //display.display();
-}
-
-void printDateTime()
-{
-  pFile = popen("date \"+DATE: \%m/\%d/\%y\%nTIME: \%H:\%M:\%S\"","r");
-
-  if (pFile == NULL) perror("Error getting date");
-  else {
-    while (fgets(readBuffer, 100, pFile) != NULL)
-      display.print(readBuffer);
-    pclose(pFile);
-  }  
-}
 
 void testdrawchar(void) {
   display.setTextSize(1);
@@ -258,7 +202,7 @@ void testdrawline() {
     display.drawLine(0, 0, display.width()-1, i, WHITE);
     display.display();
   }
-  usleep(250000);
+  usleep(250000/sleep_divisor);
   
   display.clearDisplay();
   for (int16_t i=0; i<display.width(); i+=4) {
@@ -269,7 +213,7 @@ void testdrawline() {
     display.drawLine(0, display.height()-1, display.width()-1, i, WHITE);
     display.display();
   }
-  usleep(250000);
+  usleep(250000/sleep_divisor);
   
   display.clearDisplay();
   for (int16_t i=display.width()-1; i>=0; i-=4) {
@@ -280,7 +224,7 @@ void testdrawline() {
     display.drawLine(display.width()-1, display.height()-1, 0, i, WHITE);
     display.display();
   }
-  usleep(250000);
+  usleep(250000/sleep_divisor);
 
   display.clearDisplay();
   for (int16_t i=0; i<display.height(); i+=4) {
@@ -291,7 +235,7 @@ void testdrawline() {
     display.drawLine(display.width()-1, 0, i, display.height()-1, WHITE); 
     display.display();
   }
-  usleep(250000);
+  usleep(250000/sleep_divisor);
 }
 
 void testscrolltext(void) {
@@ -299,7 +243,11 @@ void testscrolltext(void) {
   display.setTextColor(WHITE);
   display.setCursor(10,0);
   display.clearDisplay();
-  display.print("scroll");
+  
+  if (opts.oled == OLED_SH1106_I2C_128x64)
+    display.print("No scroll\non SH1106");
+  else
+    display.print("scroll");
   display.display();
  
   display.startscrollright(0x00, 0x0F);
@@ -413,6 +361,65 @@ void parse_args(int argc, char *argv[])
 	}	
 }
 
+FILE *pFile;
+char readBuffer[100];
+
+void printIp()
+{
+  pFile = popen("/sbin/ifconfig | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'","r");
+  
+  if (pFile == NULL) perror("Error getting hostname");
+  else {
+    while (fgets(readBuffer, 100, pFile) != NULL)
+      display.print(readBuffer);
+    pclose(pFile);
+  }
+  //display.display();
+}
+
+void printInterfaces()
+{
+  pFile = popen("/sbin/ifconfig | grep 'Link encap:' | cut -f2 | awk '{ print $1}'","r");
+  
+  if (pFile == NULL) perror("Error getting hostname");
+  else {
+    while (fgets(readBuffer, 100, pFile) != NULL)
+      {
+	char *pch;
+	pch = strchr(readBuffer,'\n');
+	*pch = ' ';
+	display.print(readBuffer);
+      }
+    display.print("\n");
+    pclose(pFile);
+  }
+  //display.display();
+}
+
+void printUname()
+{
+  pFile = popen("uname -sr","r");
+
+  if (pFile == NULL) perror("Error getting uname");
+  else {
+    while (fgets(readBuffer, 100, pFile) != NULL)
+      display.print(readBuffer);
+    pclose(pFile);
+  }
+  //display.display();
+}
+
+void printDateTime()
+{
+  pFile = popen("date \"+DATE: \%m/\%d/\%y\%nTIME: \%H:\%M:\%S\"","r");
+
+  if (pFile == NULL) perror("Error getting date");
+  else {
+    while (fgets(readBuffer, 100, pFile) != NULL)
+      display.print(readBuffer);
+    pclose(pFile);
+  }  
+}
 
 /* ======================================================================
 Function: main
@@ -424,7 +431,6 @@ Comments:
 int main(int argc, char **argv)
 {
 	int i;
-	
 	
 	// Oled supported display in ArduiPi_SSD1306.h
 	// Get OLED type
@@ -447,79 +453,28 @@ int main(int argc, char **argv)
 	display.begin();
 	
   // init done
-  display.clearDisplay();   // clears the screen and buffer
+  display.clearDisplay();   // clears the screen  buffer
+  display.display();   		// display it (clear display)
 
+	if (opts.oled == 5)
+	{
+		// showing on this display is very slow (the driver need to be optimized)
+		sleep_divisor = 4;
 
-  // draw a single pixel
-  // display.drawPixel(10, 10, WHITE);
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
-	
-  // // draw many lines
-  // testdrawline();
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
+		for(char i=0; i < 12 ; i++)
+		{
+			display.setSeedTextXY(i,0);  //set Cursor to ith line, 0th column
+			display.setGrayLevel(i); //Set Grayscale level. Any number between 0 - 15.
+			display.putSeedString("Hello World"); //Print Hello World
+		}
+		
+		sleep(2);
 
-  // // draw rectangles
-  // testdrawrect();
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
+	}
 
-  // // draw multiple rectangles
-  // testfillrect();
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
+  display.clearDisplay();
 
-  // // draw mulitple circles
-  // testdrawcircle();
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
-
-  // // draw a white circle, 10 pixel radius
-  // display.fillCircle(display.width()/2, display.height()/2, 10, WHITE);
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
-
-  // testdrawroundrect();
-  // sleep(2);
-  // display.clearDisplay();
-
-  // testfillroundrect();
-  // sleep(2);
-  // display.clearDisplay();
-
-  // testdrawtriangle();
-  // sleep(2);
-  // display.clearDisplay();
-   
-  // testfilltriangle();
-  // sleep(2);
-  // display.clearDisplay();
-
-  // // draw the first ~12 characters in the font
-  // testdrawchar();
-  // display.display();
-  // sleep(2);
-  // display.clearDisplay();
-
-  	// text display tests
-  // display.setTextSize(1);
-  // display.setTextColor(WHITE);
-  // display.setCursor(0,0);
-  // display.print("Hello, world!\n");
-  // display.setTextColor(BLACK, WHITE); // 'inverted' text
-  // display.printf("%f\n", 3.141592);
-  // display.setTextSize(2);
-  // display.setTextColor(WHITE);
-  // display.printf("0x%8X\n", 0xDEADBEEF);
-  // display.display();
-
+  // draw stuff
   while (1) {
   display.clearDisplay();
   display.setTextSize(1);
@@ -532,61 +487,6 @@ int main(int argc, char **argv)
   display.display();
   sleep(5);
   }
-  
-	
-  // 	// horizontal bargraph tests
-  // display.clearDisplay();
-  // display.setTextSize(1);
-  // display.setTextColor(WHITE);
-  // 	for ( i =0 ; i<=100 ; i++)
-  // 	{
-  // 		display.clearDisplay();
-  // 		display.setCursor(0,0);
-  // 		display.print("Gauge Graph!\n");
-  // 		display.printf("  %03d %%", i);
-  // 		display.drawHorizontalBargraph(0,16,128,16,1, i);
-  // 		display.display();
-  // 		usleep(25000);
-  // 	}
-	
-  // 	// vertical bargraph tests
-  // display.clearDisplay();
-  // display.setTextSize(1);
-  // display.setTextColor(WHITE);
-  // 	for ( i =0 ; i<=100 ; i++)
-  // 	{
-  // 		display.clearDisplay();
-  // 		display.setCursor(0,0);
-  // 		display.print("Gauge !\n");
-  // 		display.printf("%03d %%", i);
-  // 		display.drawVerticalBargraph(114,0,8,32,1, i);
-  // 		display.display();
-  // 		usleep(25000);
-  // 	}
-		
-  // // draw scrolling text
-  // testscrolltext();
-  // sleep(2);
-  // display.clearDisplay();
-
-
-  // miniature bitmap display
-  display.clearDisplay();
-  display.drawBitmap(30, 16,  logo16_glcd_bmp, 16, 16, 1);
-  display.display();
-
-  // invert the display
-  display.invertDisplay(true);
-  sleep(1); 
-  display.invertDisplay(false);
-  sleep(1); 
-
-  // draw a bitmap icon and 'animate' movement
-  testdrawbitmap(logo16_glcd_bmp, LOGO16_GLCD_HEIGHT, LOGO16_GLCD_WIDTH);
-
-	// Free PI GPIO ports
-	display.close();
-
 }
 
 

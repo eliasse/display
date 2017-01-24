@@ -7,10 +7,10 @@ apt-get install build-essential git-core libi2c-dev i2c-tools lm-sensors
 echo "i2c-bcm2708" >> /etc/modules
 echo "i2c-dev" >> /etc/modules
 
-git clone https://github.com/hallard/ArduiPi_SSD1306.git
+git clone https://github.com/hallard/ArduiPi_OLED.git
 
 echo "Installing display libraries..."
-cd ArduiPi_SSD1306
+cd ArduiPi_OLED
 sudo make
 cd ..
 
