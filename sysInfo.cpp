@@ -377,6 +377,19 @@ void printIp()
   //display.display();
 }
 
+void printServerStatus()
+{
+  pFile = popen("/bin/ps -e | awk '/asyncServer/ {print ($4==\"asyncServer\") ? \"Server is on\" : \"Server is off\"}'","r");
+  
+  if (pFile == NULL) display.print("Unknown Server Status");
+  else {
+    while (fgets(readBuffer, 100, pFile) != NULL)
+      display.print(readBuffer);
+    pclose(pFile);
+  }
+  //display.display();
+}
+
 void printInterfaces()
 {
   pFile = popen("/sbin/ifconfig | grep 'Link encap:' | cut -f2 | awk '{ print $1}'","r");
@@ -480,7 +493,8 @@ int main(int argc, char **argv)
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
-  printUname();
+  //printUname();
+  printServerStatus();
   printIp();
   printInterfaces();
   printDateTime();
